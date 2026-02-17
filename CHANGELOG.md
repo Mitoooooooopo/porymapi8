@@ -9,6 +9,7 @@ and this project somewhat adheres to [Semantic Versioning](https://semver.org/sp
 - Fix degraded image quality in exported timelapse gifs.
 - Fix custom top-level data in the `encounters` object of `wild_encounters.json` being discarded if no `fields` data is present.
 - Fix event sprites sometimes rendering with incorrect transparency temporarily after a sprite change.
+- Fix event sprite names that appear in `symbol_obj_event_gfx_pointers` by value and not by name not rendering with the correct sprite.
 
 ## [6.3.0] - 2025-12-26
 ### Added
