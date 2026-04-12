@@ -5,8 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project somewhat adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).  The MAJOR version number is bumped when there are **"Breaking Changes"** in the pret projects. For more on this, see [the manual page on breaking changes](https://huderlem.github.io/porymap/manual/breaking-changes.html).
 
 ## [Unreleased]
+Nothing, yet.
+
+## [6.3.1] - 2026-04-12
 ### Added
-- Support `INCGFX` in addition to `INCBIN`. The regular expression for these statements is now available under `Project Settings`.
+- Add support for `INCGFX` (see https://github.com/pret/pokeemerald/pull/2283 for details).
+- The regular expression for parsing `INCBIN` / `INCGFX` is now available under `Project Settings`.
 
 ### Fixed
 - Fix degraded image quality in exported timelapse gifs.
@@ -717,7 +721,8 @@ and this project somewhat adheres to [Semantic Versioning](https://semver.org/sp
 ## [1.0.0] - 2018-10-26
 This was the initial release.
 
-[Unreleased]: https://github.com/huderlem/porymap/compare/6.3.0...HEAD
+[Unreleased]: https://github.com/huderlem/porymap/compare/6.3.1...HEAD
+[6.3.1]: https://github.com/huderlem/porymap/compare/6.3.0...6.3.1
 [6.3.0]: https://github.com/huderlem/porymap/compare/6.2.0...6.3.0
 [6.2.0]: https://github.com/huderlem/porymap/compare/6.1.0...6.2.0
 [6.1.0]: https://github.com/huderlem/porymap/compare/6.0.0...6.1.0
