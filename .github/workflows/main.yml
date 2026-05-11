@@ -22,9 +22,6 @@ jobs:
         run: |
           apk add --no-cache \
             git \
-            curl \
-            tar \
-            make \
             qt6-qtbase-dev \
             qt6-qtcharts-dev \
             qt6-qtdeclarative-dev \
@@ -32,22 +29,38 @@ jobs:
             qt6-qtsvg-dev \
             build-base
 
-      - name: Build giflib 5.1.4 from source
-        run: |
-          curl -L https://sourceforge.net/projects/giflib/files/giflib-5.1.4.tar.gz/download \
-            -o giflib-5.1.4.tar.gz
-          tar xf giflib-5.1.4.tar.gz
-          cd giflib-5.1.4
-          make
-          make install PREFIX=/usr/local
-          # make sure the old .so is found first
-          echo /usr/local/lib >> /etc/ld-musl-aarch64.path
+      - name: Clone Porymap
+        run: git clone --depth=1 https://github.com/huderlem/porymap
 
-      - name: Clone and build Porymap
+      - name: Patch vendored giflib for giflib 5.2+ compatibility
+        working-directory: porymap
         run: |
-          git clone --depth=1 https://github.com/huderlem/porymap
-          cd porymap
-          qmake6 INCLUDEPATH+=/usr/local/include LIBS+="-L/usr/local/lib -lgif"
+          GIF_H="src/vendor/QtGifImage/3rdParty/giflib/gif_lib.h"
+          GIF_CPP="src/vendor/QtGifImage/gifimage/qgifimage.cpp"
+
+          # Fix _Bool: replace with int, guarded so it doesn't double-define
+          sed -i 's/#define BOOL _Bool/#ifndef BOOL\n#define BOOL int\n#endif/' "$GIF_H"
+
+          # Remove fields removed in giflib 5.2
+          sed -i '/BOOL SortFlag;/d'     "$GIF_H"
+          sed -i '/BOOL Interlace;/d'    "$GIF_H"
+          sed -i '/BOOL UserInputFlag;/d' "$GIF_H"
+
+          # Fix function signatures using removed BOOL params
+          sed -i 's/const BOOL GifTestExistence,/int GifTestExistence,/' "$GIF_H"
+          sed -i 's/const BOOL GifInterlace,/int GifInterlace,/'         "$GIF_H"
+          sed -i 's/const BOOL gif89/int gif89/'                          "$GIF_H"
+
+          # Fix usages in .cpp
+          sed -i '/cmap->SortFlag/d'                                       "$GIF_CPP"
+          sed -i 's/gifImage\.ImageDesc\.Interlace/0/g'                    "$GIF_CPP"
+          sed -i '/gifImage->ImageDesc\.Interlace = frameInfo\.interlace/d' "$GIF_CPP"
+          sed -i '/gcbBlock\.UserInputFlag/d'                               "$GIF_CPP"
+
+      - name: Build
+        working-directory: porymap
+        run: |
+          qmake6
           make -j$(nproc)
 
       - name: Upload binary
