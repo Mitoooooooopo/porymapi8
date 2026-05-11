@@ -1,5 +1,7 @@
 name: Build Porymap for Alpine aarch64 (musl)
-
+permissions:
+      contents: write
+      
 on: push
 
 jobs:
@@ -54,8 +56,24 @@ jobs:
           qmake6 -config release porymap.pro
           make -j$(nproc)
 
-      - name: Upload binary
+      - name: Upload binary to release
         run: |
-          apk add --no-cache curl
-          echo "Download URL:"
-          curl -T porymap/porymap https://transfer.sh/porymap-aarch64-musl
+          apk add --no-cache curl jq
+
+          # Get the release ID by tag name "latest"
+          RELEASE_ID=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/latest" \
+            | jq -r '.id')
+
+          echo "Release ID: $RELEASE_ID"
+
+          # Upload the binary
+          curl -L \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/octet-stream" \
+            "https://uploads.github.com/repos/${{ github.repository }}/releases/${RELEASE_ID}/assets?name=porymap-alpine-aarch64-musl" \
+            --data-binary @porymap/porymap
