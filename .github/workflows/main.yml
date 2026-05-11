@@ -34,7 +34,9 @@ jobs:
 
       - name: Build and install giflib 5.1.4
         run: |
-          wget https://downloads.sourceforge.net/giflib/giflib-5.1.4.tar.bz2
+          apk add --no-cache autoconf automake libtool
+          wget -O giflib-5.1.4.tar.bz2 \
+            "https://sourceforge.net/projects/giflib/files/giflib-5.1.4.tar.bz2/download"
           tar xf giflib-5.1.4.tar.bz2
           cd giflib-5.1.4
           autoreconf -fi
