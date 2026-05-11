@@ -10,9 +10,12 @@ jobs:
       options: --platform linux/arm64
 
     steps:
-      - name: Enable community repo
+      - name: Set up repos
         run: |
-          echo "https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+          cat > /etc/apk/repositories << 'EOF'
+          https://dl-cdn.alpinelinux.org/alpine/v3.21/main
+          https://dl-cdn.alpinelinux.org/alpine/v3.21/community
+          EOF
           apk update
 
       - name: Install dependencies
