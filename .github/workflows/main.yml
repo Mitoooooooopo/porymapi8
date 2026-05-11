@@ -1,4 +1,4 @@
-name: Build Porymap for Alpine aarch64
+name: Build Porymap for Alpine aarch64 (musl)
 
 on: push
 
@@ -24,31 +24,34 @@ jobs:
             git \
             qt6-qtbase-dev \
             qt6-qtcharts-dev \
-            qt6-qtdeclarative-dev \
-            qt6-qttools-dev \
+            qt6-qtdeclarative \
             qt6-qtsvg-dev \
+            qt6-qttools-dev \
             build-base
 
-      - name: Install autoconf for giflib build
-        run: apk add --no-cache autoconf automake libtool wget
+      - name: Clone Porymap
+        run: git clone --depth=1 https://github.com/huderlem/porymap
 
-      - name: Build and install giflib 5.1.4
+      - name: Patch vendored giflib for giflib 5.2+ and C++ compatibility
+        working-directory: porymap
         run: |
-          apk add --no-cache autoconf automake libtool
-          wget -O giflib-5.1.4.tar.bz2 \
-            "https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.1.4.tar.gz?ts=gAAAAABqAXcL1ykEL5Vbpf7AO7WvbmQynYHa5XQdU3miop8C_8erdVHXkzega-kPf70V_profTBD6_DHuKnd86yqKwHfubUi2A%3D%3D&use_mirror=yer&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgiflib%2Ffiles%2Fgiflib-5.x%2F"
-          tar xf giflib-5.1.4.tar.bz2
-          cd giflib-5.1.4
-          autoreconf -fi
-          ./configure --prefix=/usr --disable-static
-          make
-          make install
+          GIF_H="src/vendor/QtGifImage/3rdParty/giflib/gif_lib.h"
+          GIF_CPP="src/vendor/QtGifImage/gifimage/qgifimage.cpp"
 
-      - name: Clone and build Porymap
+          # _Bool is C99 only — not valid in C++, replace with int
+          sed -i 's/#define BOOL _Bool/#define BOOL int/' "$GIF_H"
+
+          # Remove the 5 usages of fields dropped in giflib 5.2
+          sed -i '/cmap->SortFlag = false;/d'                                                "$GIF_CPP"
+          sed -i 's/frameInfo\.interlace = gifImage\.ImageDesc\.Interlace;/frameInfo.interlace = false;/' "$GIF_CPP"
+          sed -i 's/if (gifImage\.ImageDesc\.Interlace)/if (false)/'                        "$GIF_CPP"
+          sed -i '/gifImage->ImageDesc\.Interlace = frameInfo\.interlace;/d'                "$GIF_CPP"
+          sed -i '/gcbBlock\.UserInputFlag = false;/d'                                      "$GIF_CPP"
+
+      - name: Build
+        working-directory: porymap
         run: |
-          git clone --depth=1 https://github.com/huderlem/porymap
-          cd porymap
-          qmake6
+          qmake6 -config release porymap.pro
           make -j$(nproc)
 
       - name: Upload binary
