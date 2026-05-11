@@ -37,30 +37,26 @@ jobs:
         run: |
           GIF_H="src/vendor/QtGifImage/3rdParty/giflib/gif_lib.h"
           GIF_CPP="src/vendor/QtGifImage/gifimage/qgifimage.cpp"
-          DGIF_C="src/vendor/QtGifImage/3rdParty/giflib/dgif_lib.c"
 
-          # Fix _Bool
+          # Fix _Bool — giflib 5.2 removed it, add it back as int
           sed -i 's/#define BOOL _Bool/#ifndef BOOL\n#define BOOL int\n#endif/' "$GIF_H"
 
-          # Remove fields removed in giflib 5.2 from header
-          sed -i '/BOOL SortFlag;/d'      "$GIF_H"
-          sed -i '/BOOL Interlace;/d'     "$GIF_H"
-          sed -i '/BOOL UserInputFlag;/d' "$GIF_H"
+          # Add back removed fields into their structs so the C files compile unchanged
+          # SortFlag belonged to ColorMapObject
+          sed -i 's/} ColorMapObject;/    BOOL SortFlag;\n} ColorMapObject;/' "$GIF_H"
 
-          # Fix function signatures in header
-          sed -i 's/const BOOL GifTestExistence,/int GifTestExistence,/' "$GIF_H"
-          sed -i 's/const BOOL GifInterlace,/int GifInterlace,/'         "$GIF_H"
-          sed -i 's/const BOOL gif89/int gif89/'                          "$GIF_H"
+          # Interlace belonged to GifImageDesc
+          sed -i 's/} GifImageDesc;/    BOOL Interlace;\n} GifImageDesc;/' "$GIF_H"
 
-          # Fix qgifimage.cpp — use full member path to avoid mangling struct name
-          sed -i '/cmap->SortFlag/d'                                              "$GIF_CPP"
-          sed -i 's/gifImage\.ImageDesc\.Interlace/0/g'                           "$GIF_CPP"
-          sed -i '/gifImage->ImageDesc\.Interlace = frameInfo\.interlace/d'       "$GIF_CPP"
-          sed -i '/gcbBlock\.UserInputFlag/d'                                      "$GIF_CPP"
+          # UserInputFlag belonged to GraphicsControlBlock
+          sed -i 's/} GraphicsControlBlock;/    BOOL UserInputFlag;\n} GraphicsControlBlock;/' "$GIF_H"
 
-          # Fix dgif_lib.c — be specific, never use bare .Interlace or .UserInputFlag
-          sed -i 's/sp->ImageDesc\.Interlace/0/g'                                 "$DGIF_C"
-          sed -i 's/GCB->UserInputFlag\s*=\s*[^;]*;/GCB->Padding = 0;/g'         "$DGIF_C"
+          # Fix qgifimage.cpp usages that reference fields qgifimage itself uses
+          # These are safe because we're only touching the Qt wrapper, not giflib internals
+          sed -i '/cmap->SortFlag/d'                                        "$GIF_CPP"
+          sed -i 's/gifImage\.ImageDesc\.Interlace/0/g'                     "$GIF_CPP"
+          sed -i '/gifImage->ImageDesc\.Interlace = frameInfo\.interlace/d' "$GIF_CPP"
+          sed -i '/gcbBlock\.UserInputFlag/d'                                "$GIF_CPP"
       - name: Build
         working-directory: porymap
         run: |
