@@ -36,7 +36,7 @@ jobs:
         run: |
           apk add --no-cache autoconf automake libtool
           wget -O giflib-5.1.4.tar.bz2 \
-            "https://sourceforge.net/projects/giflib/files/giflib-5.1.4.tar.bz2/download"
+            "https://downloads.sourceforge.net/project/giflib/giflib-5.x/giflib-5.1.4.tar.gz?ts=gAAAAABqAXcL1ykEL5Vbpf7AO7WvbmQynYHa5XQdU3miop8C_8erdVHXkzega-kPf70V_profTBD6_DHuKnd86yqKwHfubUi2A%3D%3D&use_mirror=yer&r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fgiflib%2Ffiles%2Fgiflib-5.x%2F"
           tar xf giflib-5.1.4.tar.bz2
           cd giflib-5.1.4
           autoreconf -fi
