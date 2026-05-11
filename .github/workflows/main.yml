@@ -29,37 +29,23 @@ jobs:
             qt6-qtsvg-dev \
             build-base
 
-      - name: Clone Porymap
-        run: git clone --depth=1 https://github.com/huderlem/porymap
+      - name: Install autoconf for giflib build
+        run: apk add --no-cache autoconf automake libtool wget
 
-      - name: Patch vendored giflib for giflib 5.2+ compatibility
-        working-directory: porymap
+      - name: Build and install giflib 5.1.4
         run: |
-          GIF_H="src/vendor/QtGifImage/3rdParty/giflib/gif_lib.h"
-          GIF_CPP="src/vendor/QtGifImage/gifimage/qgifimage.cpp"
+          wget https://downloads.sourceforge.net/giflib/giflib-5.1.4.tar.bz2
+          tar xf giflib-5.1.4.tar.bz2
+          cd giflib-5.1.4
+          autoreconf -fi
+          ./configure --prefix=/usr --disable-static
+          make
+          make install
 
-          # Fix _Bool — giflib 5.2 removed it, add it back as int
-          sed -i 's/#define BOOL _Bool/#ifndef BOOL\n#define BOOL int\n#endif/' "$GIF_H"
-
-          # Add back removed fields into their structs so the C files compile unchanged
-          # SortFlag belonged to ColorMapObject
-          sed -i 's/} ColorMapObject;/    BOOL SortFlag;\n} ColorMapObject;/' "$GIF_H"
-
-          # Interlace belonged to GifImageDesc
-          sed -i 's/} GifImageDesc;/    BOOL Interlace;\n} GifImageDesc;/' "$GIF_H"
-
-          # UserInputFlag belonged to GraphicsControlBlock
-          sed -i 's/} GraphicsControlBlock;/    BOOL UserInputFlag;\n} GraphicsControlBlock;/' "$GIF_H"
-
-          # Fix qgifimage.cpp usages that reference fields qgifimage itself uses
-          # These are safe because we're only touching the Qt wrapper, not giflib internals
-          sed -i '/cmap->SortFlag/d'                                        "$GIF_CPP"
-          sed -i 's/gifImage\.ImageDesc\.Interlace/0/g'                     "$GIF_CPP"
-          sed -i '/gifImage->ImageDesc\.Interlace = frameInfo\.interlace/d' "$GIF_CPP"
-          sed -i '/gcbBlock\.UserInputFlag/d'                                "$GIF_CPP"
-      - name: Build
-        working-directory: porymap
+      - name: Clone and build Porymap
         run: |
+          git clone --depth=1 https://github.com/huderlem/porymap
+          cd porymap
           qmake6
           make -j$(nproc)
 
