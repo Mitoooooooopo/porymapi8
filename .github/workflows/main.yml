@@ -56,6 +56,8 @@ jobs:
           sed -i 's/gifImage\.ImageDesc\.Interlace/0/g'                    "$GIF_CPP"
           sed -i '/gifImage->ImageDesc\.Interlace = frameInfo\.interlace/d' "$GIF_CPP"
           sed -i '/gcbBlock\.UserInputFlag/d'                               "$GIF_CPP"
+          grep -rl '\.Interlace' src/vendor/QtGifImage/3rdParty/giflib/ | \
+            xargs -r sed -i 's/\.Interlace/0/g'
 
       - name: Build
         working-directory: porymap
