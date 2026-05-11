@@ -54,8 +54,12 @@ jobs:
           qmake6 -config release porymap.pro
           make -j$(nproc)
 
-      - name: Upload binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: porymap-alpine-aarch64-musl
-          path: porymap/porymap
+      - name: Upload binary to GitHub Release
+        run: |
+          apk add --no-cache curl
+          curl -L \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            "https://uploads.github.com/repos/${{ github.repository }}/releases/latest/assets?name=porymap-alpine-aarch64-musl" \
+            --data-binary @porymap/porymap
