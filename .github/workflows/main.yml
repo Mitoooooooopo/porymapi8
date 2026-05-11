@@ -22,6 +22,9 @@ jobs:
         run: |
           apk add --no-cache \
             git \
+            curl \
+            tar \
+            make \
             qt6-qtbase-dev \
             qt6-qtcharts-dev \
             qt6-qtdeclarative-dev \
@@ -29,12 +32,23 @@ jobs:
             qt6-qtsvg-dev \
             build-base
 
+      - name: Build giflib 5.1.4 from source
+        run: |
+          curl -L https://sourceforge.net/projects/giflib/files/giflib-5.1.4.tar.gz/download \
+            -o giflib-5.1.4.tar.gz
+          tar xf giflib-5.1.4.tar.gz
+          cd giflib-5.1.4
+          make
+          make install PREFIX=/usr/local
+          # make sure the old .so is found first
+          echo /usr/local/lib >> /etc/ld-musl-aarch64.path
+
       - name: Clone and build Porymap
         run: |
           git clone --depth=1 https://github.com/huderlem/porymap
           cd porymap
-          qmake6
-          make -j8
+          qmake6 INCLUDEPATH+=/usr/local/include LIBS+="-L/usr/local/lib -lgif"
+          make -j$(nproc)
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
